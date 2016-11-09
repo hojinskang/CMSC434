@@ -1,13 +1,19 @@
 package com.example.hojinskang.doodle;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Vector;
 
 /**
  * Created by hojinskang on 11/2/16.
@@ -15,8 +21,10 @@ import android.view.View;
 
 public class DoodleView extends View {
 
-    private Paint _paintDoodle = new Paint();
-    private Path _path = new Path();
+    private Drawing drawing;
+    private Vector<Drawing> drawings, undoneDrawings;
+    private int brushA, brushR, brushG, brushB, brushColor, brushSize;
+    private Canvas cv;
 
     public DoodleView (Context context) {
         super(context);
@@ -34,16 +42,75 @@ public class DoodleView extends View {
     }
 
     public void init(AttributeSet attrs, int defStyle) {
-        _paintDoodle.setColor(Color.RED);
-        _paintDoodle.setAntiAlias(true);
+        brushA = 255;
+        brushR = 0;
+        brushG = 0;
+        brushB = 0;
+        brushColor = Color.BLACK;
+        brushSize = 5;
+        drawings = new Vector<Drawing>();
+        undoneDrawings = new Vector<Drawing>();
+        drawing = new Drawing(brushColor, brushSize);
+        cv = new Canvas();
+    }
+
+    public void setColor(int color) {
+        brushColor = color;
+    }
+
+    public void setSize(int size) {
+        brushSize = size;
+    }
+
+    public void setColor(int num, char c) {
+        switch(c) {
+            case 'A':
+                brushA = num;
+                break;
+            case 'R':
+                brushR = num;
+                break;
+            case 'G':
+                brushG = num;
+                break;
+            case 'B':
+                brushB = num;
+                break;
+        }
+        brushColor = Color.argb(brushA, brushR, brushG, brushB);
+    }
+
+    public int getColor() {
+        return brushColor;
+    }
+
+    public int getSize() {
+        return brushSize;
+    }
+
+    public int getColor(char c) {
+        switch(c) {
+            case 'A':
+                return brushA;
+            case 'R':
+                return brushR;
+            case 'G':
+                return brushG;
+            case 'B':
+                return brushB;
+        }
+        return -1; // this should never occur
     }
 
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
-        // canvas.drawLine(0, 0, getWidth(), getHeight(), _paintDoodle);
-        canvas.drawPath(_path, _paintDoodle);
+        for (Drawing d : drawings) {
+            canvas.drawPath(d.getPath(), d.getPaint());
+        }
+        drawing.getPaint().setColor(brushColor);
+        drawing.getPaint().setStrokeWidth(brushSize);
+        canvas.drawPath(drawing.getPath(), drawing.getPaint());
     }
 
     @Override
@@ -53,16 +120,47 @@ public class DoodleView extends View {
 
         switch(motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
-                _path.moveTo(touchX, touchY);
+                //drawing = new Drawing(brushColor, brushSize);
+                drawing.getPath().reset();
+                drawing.getPath().moveTo(touchX, touchY);
                 break;
             case MotionEvent.ACTION_MOVE:
-                _path.lineTo(touchX, touchY);
+                drawing.getPath().lineTo(touchX, touchY);
                 break;
             case MotionEvent.ACTION_UP:
+                drawing.getPath().lineTo(touchX, touchY);
+                cv.drawPath(drawing.getPath(), drawing.getPaint());
+                drawings.add(drawing);
+                drawing = new Drawing(brushColor, brushSize);
                 break;
         }
 
         invalidate();
         return true;
+    }
+
+    public void onClickUndo(View v) {
+        if (!drawings.isEmpty()) {
+            Drawing d = drawings.remove(drawings.size() - 1);
+            Log.d("UNDO", d.toString());
+            undoneDrawings.add(d);
+            invalidate();
+        }
+    }
+
+    public void onClickRedo(View v) {
+        if (!undoneDrawings.isEmpty()) {
+            Drawing d = undoneDrawings.remove(undoneDrawings.size() - 1);
+            Log.d("REDO", d.toString());
+            drawings.add(d);
+            invalidate();
+        }
+    }
+
+    public void onClickClear(View v) {
+        drawing.getPath().reset();
+        drawings.clear();
+        undoneDrawings.clear();
+        invalidate();
     }
 }
