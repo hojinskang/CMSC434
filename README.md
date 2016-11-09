@@ -6,4 +6,4 @@
 - Click/press any one of five icons to set brush size, set brush color, undo drawing, redo drawing, and clear canvas.
 
 ### References
-Redo and undo functionalities based on algorithm from [Stackoverflow](http://stackoverflow.com/questions/11114625/android-canvas-redo-and-undo-operation)
+Redo and undo functionalities based on algorithm from [Stack Overflow](http://stackoverflow.com/questions/11114625/android-canvas-redo-and-undo-operation)
