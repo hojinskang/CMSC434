@@ -8,7 +8,8 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="edu.umd.hcil.impressionistpainter434.MainActivity"
-    android:padding="0dp">
+    android:padding="0dp"
+    android:screenOrientation="landscape">
 
 
     <LinearLayout

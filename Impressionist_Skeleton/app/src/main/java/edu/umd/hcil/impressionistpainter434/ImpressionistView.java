@@ -6,8 +6,10 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.Rect;
+import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -30,7 +32,7 @@ public class ImpressionistView extends View {
     private Paint _paint = new Paint();
 
     private int _alpha = 150;
-    private int _defaultRadius = 25;
+    private float _defaultRadius = 25.0f;
     private Point _lastPoint = null;
     private long _lastPointTime = -1;
     private boolean _useMotionSpeedForBrushStrokeSize = true;
@@ -137,12 +139,14 @@ public class ImpressionistView extends View {
         float touchX = motionEvent.getX();
         float touchY = motionEvent.getY();
 
-        switch(motionEvent.getAction()) {
+        switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 break;
             case MotionEvent.ACTION_MOVE:
-                break;
-            case MotionEvent.ACTION_UP:
+                touchX = motionEvent.getX();
+                touchY = motionEvent.getY();
+                _paint.setColor(getPixelColor(touchX, touchY));
+                draw(touchX, touchY);
                 break;
         }
 
@@ -150,7 +154,58 @@ public class ImpressionistView extends View {
         return true;
     }
 
+    private void draw(float touchX, float touchY) {
+        //_offScreenCanvas.drawRect(touchX - 30.0f, touchY - 30.0f, touchX + 30.0f, touchY + 30.0f, _paint);
 
+        switch(_brushType) {
+            case Circle:
+                _offScreenCanvas.drawCircle(touchX, touchY, _defaultRadius, _paint);
+                break;
+            case Square:
+                _offScreenCanvas.drawRect(touchX - _defaultRadius, touchY - _defaultRadius, touchX + _defaultRadius, touchY + _defaultRadius, _paint);
+                break;
+            case Line:
+                break;
+            case CircleSplatter:
+                break;
+            case LineSplatter:
+                break;
+        }
+    }
+
+    private int getPixelColor(float touchX, float touchY) {
+        if(_imageView == null) {
+            return Color.WHITE;
+        }
+
+        Rect rect = getBitmapPositionInsideImageView(_imageView);
+        if(touchX < rect.left || touchX > rect.right || touchY < rect.top || touchY > rect.bottom) {
+            return Color.WHITE;
+        }
+
+        BitmapDrawable bitmapDrawable = ((BitmapDrawable) _imageView.getDrawable());
+        if(bitmapDrawable == null) {
+            return Color.WHITE;
+        }
+
+        Bitmap bitmap = bitmapDrawable.getBitmap();
+
+        float scaleX = ((float) bitmapDrawable.getIntrinsicWidth()) / rect.width();
+        float scaleY = ((float) bitmapDrawable.getIntrinsicHeight()) / rect.height();
+
+        int x = (int) Math.ceil((touchX - rect.left) * scaleX);
+        int y = (int) Math.ceil((touchY - rect.top) * scaleY);
+
+        if (x < 0 || x >= bitmapDrawable.getIntrinsicWidth() || y < 0 || y >= bitmapDrawable.getIntrinsicHeight()) {
+            return Color.WHITE;
+        }
+
+        int color = bitmap.getPixel(x, y);
+        int red = Color.red(color);
+        int green = Color.green(color);
+        int blue = Color.blue(color);
+        return Color.argb(_alpha, red, green, blue);
+    }
 
 
     /**
@@ -194,6 +249,7 @@ public class ImpressionistView extends View {
         int top = (int) (imgViewH - heightActual)/2;
         int left = (int) (imgViewW - widthActual)/2;
 
+        // Log.d("Dimension", left + " " + top + " " + widthActual + " " + heightActual);
         rect.set(left, top, left + widthActual, top + heightActual);
 
         return rect;
