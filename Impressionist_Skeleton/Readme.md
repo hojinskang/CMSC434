@@ -2,6 +2,7 @@
 
 ## Description
 (Optional) Download images
+
 1. Load image of your choice
 2. Select brush type
 3. Click/press down and drag to draw impressionist painting of your image
