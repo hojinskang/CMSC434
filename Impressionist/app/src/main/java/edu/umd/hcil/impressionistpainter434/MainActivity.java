@@ -189,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
         boolean checkStorage = FileUtils.checkPermissionToWriteToExternalStorage(MainActivity.this);
 
         Bitmap bitmap = _impressionistView.getImpressionistPainting();
-        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "impressionistPainting.png");
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "painting.png");
         try {
             boolean compressSucceeded = bitmap.compress(Bitmap.CompressFormat.PNG, 100, new FileOutputStream(file));
             FileUtils.addImageToGallery(file.getAbsolutePath(), getApplicationContext());
