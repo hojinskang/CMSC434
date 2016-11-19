@@ -8,6 +8,7 @@
 3. Click/press down and drag to draw impressionist painting of your image
 4. Click clear to erase your impressionist painting
 
+
 See demo on [Youtube](https://www.youtube.com/watch?v=5vvQJ_RjeQU)
 
 ## References
