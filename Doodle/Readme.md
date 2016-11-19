@@ -1,4 +1,4 @@
-# CMSC434
+# CMSC434 Doodle
 
 ## Description
 - Click/press down and drag to draw
