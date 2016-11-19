@@ -75,7 +75,6 @@
                 android:id="@+id/buttonClear"
                 android:onClick="onButtonClickClear"/>
 
-
         </LinearLayout>
 
     </LinearLayout>

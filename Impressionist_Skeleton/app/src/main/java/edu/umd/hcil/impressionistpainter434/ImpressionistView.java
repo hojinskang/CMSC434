@@ -11,14 +11,21 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.hardware.Sensor;
+import android.hardware.SensorEvent;
+import android.hardware.SensorEventListener;
+import android.hardware.SensorManager;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
 import android.widget.ImageView;
 
 import java.text.MessageFormat;
 import java.util.Random;
+
+import static android.content.Context.SENSOR_SERVICE;
 
 /**
  * Created by jon on 3/20/2016.
@@ -31,14 +38,22 @@ public class ImpressionistView extends View {
     private Bitmap _offScreenBitmap = null;
     private Paint _paint = new Paint();
 
-    private int _alpha = 150;
-    private float _defaultRadius = 25.0f;
+    private int _alpha = 100;
+    private float _defaultRadius = 30.0f;
     private Point _lastPoint = null;
     private long _lastPointTime = -1;
     private boolean _useMotionSpeedForBrushStrokeSize = true;
     private Paint _paintBorder = new Paint();
     private BrushType _brushType = BrushType.Square;
     private float _minBrushRadius = 5;
+
+    // properties for tracking gesture (velocity)
+    private VelocityTracker _velocityTracker = null;
+    private int _touchPoints = 0;
+
+    // properties for tracking gesture (path)
+    private Path _touchPath = new Path();
+    private Paint _touchPaint = new Paint();
 
     public ImpressionistView(Context context) {
         super(context);
@@ -79,6 +94,12 @@ public class ImpressionistView extends View {
         _paintBorder.setStyle(Paint.Style.STROKE);
         _paintBorder.setAlpha(50);
 
+        _touchPaint.setColor(Color.RED);
+        _touchPaint.setAlpha(255);
+        _touchPaint.setAntiAlias(true);
+        _touchPaint.setStyle(Paint.Style.STROKE);
+        _touchPaint.setStrokeWidth(3);
+
         //_paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.MULTIPLY));
     }
 
@@ -90,6 +111,7 @@ public class ImpressionistView extends View {
         if(bitmap != null) {
             _offScreenBitmap = getDrawingCache().copy(Bitmap.Config.ARGB_8888, true);
             _offScreenCanvas = new Canvas(_offScreenBitmap);
+            clearPainting();
         }
     }
 
@@ -114,8 +136,22 @@ public class ImpressionistView extends View {
      */
     public void clearPainting(){
         //TODO
+        if(_offScreenCanvas != null) {
+            Paint paint = new Paint();
+            paint.setColor(Color.WHITE);
+            paint.setStyle(Paint.Style.FILL);
+            _offScreenCanvas.drawRect(0, 0, _offScreenCanvas.getWidth(), _offScreenCanvas.getHeight(), paint);
+            if (_velocityTracker != null) {
+                _velocityTracker.clear();
+            }
+            invalidate();
+        }
     }
 
+    /**
+     * Draws the border of impressionist painting canvas and user's gesture path
+     * @param canvas
+     */
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
@@ -126,8 +162,17 @@ public class ImpressionistView extends View {
 
         // Draw the border. Helpful to see the size of the bitmap in the ImageView
         canvas.drawRect(getBitmapPositionInsideImageView(_imageView), _paintBorder);
+
+        // Draw gesture movement path
+        canvas.drawPath(_touchPath, _touchPaint);
     }
 
+    /**
+     * Draws impressionist painting
+     * Keeps track of past movements to display seamless drawing on slower devices and emulators
+     * @param motionEvent
+     * @return
+     */
     @Override
     public boolean onTouchEvent(MotionEvent motionEvent){
 
@@ -136,17 +181,45 @@ public class ImpressionistView extends View {
         //touch locations correspond to the bitmap in the ImageView. You can then grab info about the bitmap--like the pixel color--
         //at that location
 
-        float touchX = motionEvent.getX();
-        float touchY = motionEvent.getY();
-
         switch (motionEvent.getAction()) {
             case MotionEvent.ACTION_DOWN:
+                if (_velocityTracker == null) {
+                    _velocityTracker = VelocityTracker.obtain();
+                } else {
+                    _velocityTracker.clear();
+                }
+                _velocityTracker.addMovement(motionEvent);
+
+                _touchPath.reset();
+                _touchPath.moveTo(motionEvent.getX(), motionEvent.getY());
                 break;
             case MotionEvent.ACTION_MOVE:
-                touchX = motionEvent.getX();
-                touchY = motionEvent.getY();
+                _velocityTracker.addMovement(motionEvent);
+                _velocityTracker.computeCurrentVelocity(1000);
+
+                int historySize = motionEvent.getHistorySize();
+                for (int i = 0; i < historySize; i++) {
+                    float historicalX = motionEvent.getHistoricalX(i);
+                    float historicalY = motionEvent.getHistoricalY(i);
+                    _paint.setColor(getPixelColor(historicalX, historicalY));
+                    draw(historicalX, historicalY);
+                }
+                _touchPoints += historySize + 1;
+
+                float touchX = motionEvent.getX();
+                float touchY = motionEvent.getY();
                 _paint.setColor(getPixelColor(touchX, touchY));
                 draw(touchX, touchY);
+
+                _touchPath.lineTo(touchX, touchY);
+                break;
+            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL:
+                _velocityTracker.recycle();
+                _velocityTracker = null;
+
+                _touchPath.lineTo(motionEvent.getX(), motionEvent.getY());
+                _touchPath.reset();
                 break;
         }
 
@@ -154,9 +227,13 @@ public class ImpressionistView extends View {
         return true;
     }
 
+    /**
+     * Draw based on brush type
+     * For CircleSplatter, brush size based on speed of user's gesture
+     * @param touchX
+     * @param touchY
+     */
     private void draw(float touchX, float touchY) {
-        //_offScreenCanvas.drawRect(touchX - 30.0f, touchY - 30.0f, touchX + 30.0f, touchY + 30.0f, _paint);
-
         switch(_brushType) {
             case Circle:
                 _offScreenCanvas.drawCircle(touchX, touchY, _defaultRadius, _paint);
@@ -164,15 +241,35 @@ public class ImpressionistView extends View {
             case Square:
                 _offScreenCanvas.drawRect(touchX - _defaultRadius, touchY - _defaultRadius, touchX + _defaultRadius, touchY + _defaultRadius, _paint);
                 break;
-            case Line:
-                break;
             case CircleSplatter:
-                break;
-            case LineSplatter:
+                float xVelocity = _velocityTracker.getXVelocity();
+                float yVelocity = _velocityTracker.getYVelocity();
+                double speed = Math.sqrt(Math.pow(xVelocity, 2) + Math.pow(yVelocity, 2));
+                float radius = (float) Math.ceil(speed / 50);
+
+                if (radius >= 150) {
+                    radius = 150;
+                }
+
+                Random random = new Random();
+
+                int[][] splatter = new int[][]{{-1, -1}, {-1, 1}, {1, -1}, {1, 1}};
+                for (int i = 0; i < splatter.length; i++) {
+                    float x = touchX + splatter[i][0] * (random.nextFloat() * _defaultRadius);
+                    float y = touchY + splatter[i][1] * (random.nextFloat() * _defaultRadius);
+                    _paint.setColor(getPixelColor(x, y));
+                    _offScreenCanvas.drawCircle(x, y, radius, _paint);
+                }
                 break;
         }
     }
 
+    /**
+     * Gets pixel color of the image (algorithm similar to getBitmapPositionInsideImageView method)
+     * @param touchX
+     * @param touchY
+     * @return
+     */
     private int getPixelColor(float touchX, float touchY) {
         if(_imageView == null) {
             return Color.WHITE;

@@ -122,10 +122,14 @@ public class DrawTestView extends View {
             if(_offScreenBitmap != null) {
                 // TODO: draw the offscreen bitmap to the screen
                 // Insert one line of code here
+                canvas.drawBitmap(_offScreenBitmap, 0, 0, _paint);
             }
         }else if(_drawMode == DrawMode.Objects){
             // TODO: iterate through _listPaintPoints and draw each one to the screen
             // This will take a few lines of code
+            for (PaintPoint p : _listPaintPoints) {
+                canvas.drawPoint(p.getX(), p.getY(), p.getPaint());
+            }
         }
 
         // You can ignore everything past this point. Again, simply for measuring performance

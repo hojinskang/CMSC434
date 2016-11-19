@@ -99,11 +99,11 @@ public class DoodleView extends View {
     @Override
     public void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-        for (Drawing d : drawings) {
-            canvas.drawPath(d.getPath(), d.getPaint());
-        }
-        drawing.getPaint().setColor(brushColor);
-        drawing.getPaint().setStrokeWidth(brushSize);
+//        for (Drawing d : drawings) {
+//            canvas.drawPath(d.getPath(), d.getPaint());
+//        }
+//        drawing.getPaint().setColor(brushColor);
+//        drawing.getPaint().setStrokeWidth(brushSize);
         canvas.drawPath(drawing.getPath(), drawing.getPaint());
     }
 
@@ -123,7 +123,7 @@ public class DoodleView extends View {
                 break;
             case MotionEvent.ACTION_UP:
                 drawing.getPath().lineTo(touchX, touchY);
-                cv.drawPath(drawing.getPath(), drawing.getPaint());
+                //cv.drawPath(drawing.getPath(), drawing.getPaint());
                 drawings.add(drawing);
                 drawing = new Drawing(brushColor, brushSize);
                 break;
