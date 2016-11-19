@@ -71,6 +71,14 @@ public class ImpressionistView extends View {
     }
 
     /**
+     * Return bitmap of impressionist painting
+     * @return
+     */
+    public Bitmap getImpressionistPainting() {
+        return _offScreenBitmap;
+    }
+
+    /**
      * Because we have more than one constructor (i.e., overloaded constructors), we use
      * a separate initialization method
      * @param attrs

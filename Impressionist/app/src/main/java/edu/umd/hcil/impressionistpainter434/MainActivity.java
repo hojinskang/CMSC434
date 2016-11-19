@@ -178,6 +178,28 @@ public class MainActivity extends AppCompatActivity implements OnMenuItemClickLi
     }
 
     /**
+     * Saves impressionist painting to the Gallery (based off of onButtonClickDownloadImages)
+     *
+     * @param v
+     */
+    public void onButtonClickSavePainting(View v) {
+        FileUtils.verifyStoragePermissions(this);
+        File externalStorageDirFile = Environment.getExternalStorageDirectory();
+        String externalStorageDirStr = Environment.getExternalStorageDirectory().getAbsolutePath();
+        boolean checkStorage = FileUtils.checkPermissionToWriteToExternalStorage(MainActivity.this);
+
+        Bitmap bitmap = _impressionistView.getImpressionistPainting();
+        File file = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), "impressionistPainting.png");
+        try {
+            boolean compressSucceeded = bitmap.compress(Bitmap.CompressFormat.PNG, 100, new FileOutputStream(file));
+            FileUtils.addImageToGallery(file.getAbsolutePath(), getApplicationContext());
+            Toast.makeText(getApplicationContext(), "Saved to " + file.getAbsolutePath(), Toast.LENGTH_SHORT).show();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Called automatically when an image has been selected in the Gallery
      *
      * @param requestCode
