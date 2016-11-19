@@ -9,7 +9,7 @@
 4. Click clear to erase your impressionist painting
 
 
-See demo on [Youtube](https://www.youtube.com/watch?v=5vvQJ_RjeQU)
+See demo on [Youtube](https://youtu.be/kJL7tp6ZBnA)
 
 ## References
 Tracking movement velocity from [Android Developer's Guide](https://developer.android.com/training/gestures/movement.html)
