@@ -283,29 +283,16 @@ public class ImpressionistView extends View {
             return Color.WHITE;
         }
 
-        Rect rect = getBitmapPositionInsideImageView(_imageView);
-        if(touchX < rect.left || touchX > rect.right || touchY < rect.top || touchY > rect.bottom) {
+        Bitmap imageViewBitmap = _imageView.getDrawingCache();
+        if (imageViewBitmap == null) {
             return Color.WHITE;
         }
 
-        BitmapDrawable bitmapDrawable = ((BitmapDrawable) _imageView.getDrawable());
-        if(bitmapDrawable == null) {
+        if (touchX < 0 || touchX >= imageViewBitmap.getWidth() || touchY < 0 || touchY >= imageViewBitmap.getHeight()) {
             return Color.WHITE;
         }
 
-        Bitmap bitmap = bitmapDrawable.getBitmap();
-
-        float scaleX = ((float) bitmapDrawable.getIntrinsicWidth()) / rect.width();
-        float scaleY = ((float) bitmapDrawable.getIntrinsicHeight()) / rect.height();
-
-        int x = (int) Math.ceil((touchX - rect.left) * scaleX);
-        int y = (int) Math.ceil((touchY - rect.top) * scaleY);
-
-        if (x < 0 || x >= bitmapDrawable.getIntrinsicWidth() || y < 0 || y >= bitmapDrawable.getIntrinsicHeight()) {
-            return Color.WHITE;
-        }
-
-        int color = bitmap.getPixel(x, y);
+        int color = imageViewBitmap.getPixel((int)touchX, (int)touchY);
         int red = Color.red(color);
         int green = Color.green(color);
         int blue = Color.blue(color);
